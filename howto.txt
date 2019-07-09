@@ -7,4 +7,4 @@ cd zephyrproject/zephyr
 source zephyr-env.sh
 cd ..
 
-west build -b stm32mp157c_dk2 cpr_shield/
+west build -b stm32mp157c_dk2 shield_iks01a2_ssd1306/
