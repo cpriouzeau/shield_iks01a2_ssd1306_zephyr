@@ -1,0 +1,10 @@
+cat ~/.bashrc
+#zephyr environment variables
+export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
+export ZEPHYR_SDK_INSTALL_DIR=$HOME/dev/oe/stm32mp1/zephyr-sdk/
+
+cd zephyrproject/zephyr
+source zephyr-env.sh
+cd ..
+
+west build -b stm32mp157c_dk2 cpr_shield/
