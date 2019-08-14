@@ -338,8 +338,19 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	init_sensors();
 	init_display();
 
+	if (display_available) {
+		line = 0;
+		printk("--init display screen --\n");
+
+		cfb_framebuffer_clear(dev_display, false);
+		cfb_print(dev_display, "Zephyr", 0, line++*display_font_height);
+		cfb_print(dev_display, "   Waiting ", 0, line++*display_font_height);
+		cfb_print(dev_display, "     TTY   ", 0, line++*display_font_height);
+		cfb_print(dev_display, "    data   ", 0, line++*display_font_height);
+		cfb_framebuffer_finalize(dev_display);
+	}
+
 	receive_message(&msg, &len);
-	printk("--We have receive a message from tty --\n");
 
 	while (1) {
 		int ret;
@@ -426,8 +437,8 @@ void app_task(void *arg1, void *arg2, void *arg3)
 
 		if (lps22hb_available) {
 			/* pressure */
-			len = snprintf(message, sizeof(message), "LPS22HB: Pressure:%.3f kpa\n",
-					sensor_value_to_double(&press));
+			len = snprintf(message, sizeof(message), "LPS22HB: Pressure: %.3f hpa\n",
+					sensor_value_to_double(&press)*10.0);
 			trace_send(message);
 			tty_display_send(message, len);
 
@@ -438,7 +449,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 			tty_display_send(message, len);
 
 			snprintf(display_buf, sizeof(display_buf), "P: %3f kpa",
-					sensor_value_to_double(&press));
+					sensor_value_to_double(&press)*10.0);
 			if (display_available)
 				cfb_print(dev_display, display_buf, 0, line++*display_font_height);
 			snprintf(display_buf, sizeof(display_buf), "T: %1fC",
@@ -575,9 +586,13 @@ void init_display() {
 				break;
 			}
 			cfb_framebuffer_set_font(dev_display, idx);
-			printf("font width %d, font height %d\n",
-					display_font_width, display_font_height);
+			printf("idx: %d font width %d, font height %d\n",
+					idx, display_font_width, display_font_height);
 		}
+		// for idx: 0 font width 10, font height 16
+		cfb_framebuffer_set_font(dev_display, 0);
+		cfb_get_font_size(dev_display, 0, &display_font_width, &display_font_height);
+
 		printf("x_res %d, y_res %d, ppt %d, rows %d, cols %d\n",
 			cfb_get_display_parameter(dev_display, CFB_DISPLAY_WIDTH),
 			cfb_get_display_parameter(dev_display, CFB_DISPLAY_HEIGH),
