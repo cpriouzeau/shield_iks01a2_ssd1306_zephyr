@@ -52,9 +52,6 @@ void stop_display();
 #include <metal/device.h>
 #include <resource_table.h>
 
-extern int __OPENAMP_region_start__[];   /* defined by linker script */
-extern int __OPENAMP_region_end__[];  /* defined by linker script */
-
 #include <logging/log.h>
 LOG_MODULE_REGISTER(zephyr_shield_openamp_tty, LOG_LEVEL_DBG);
 
@@ -62,9 +59,8 @@ LOG_MODULE_REGISTER(zephyr_shield_openamp_tty, LOG_LEVEL_DBG);
 #define SHM_DEVICE_NAME	"shm"
 
 /* constant derivated from linker symbols */
-#define SHM_START_ADDR	((metal_phys_addr_t)__OPENAMP_region_start__)
-#define SHM_SIZE	(size_t)((int)__OPENAMP_region_end__ - \
-				 (int)__OPENAMP_region_start__)
+#define SHM_START_ADDR	DT_IPC_SHM_BASE_ADDRESS
+#define SHM_SIZE	(DT_IPC_SHM_SIZE * 1024)
 
 #define APP_TASK_STACK_SIZE (1024)
 K_THREAD_STACK_DEFINE(thread_stack, APP_TASK_STACK_SIZE);
@@ -94,7 +90,7 @@ static struct rpmsg_virtio_device rvdev;
 
 static void *rsc_table;
 
-static char rcv_msg[20];  /* should received "Hello world!" */
+static char rcv_msg[20];  /* should receive "Hello world!" */
 static unsigned int rcv_len;
 static struct rpmsg_endpoint rcv_ept;
 
@@ -205,13 +201,13 @@ int platform_init(void)
 		      (metal_phys_addr_t *)rsc_table, rsc_size, -1, 0, NULL);
 
 	rsc_io = metal_device_io_region(device, 1);
-	if (!shm_io) {
+	if (!rsc_io) {
 		printf("Failed to get rsc_io region\n");
 		return -1;
 	}
 
 	/* setup IPM */
-	ipm_handle = device_get_binding("MAILBOX_0");
+	ipm_handle = device_get_binding(DT_IPM_DEV/*"MAILBOX_0"*/);
 	if (!ipm_handle) {
 		printf("Failed to find ipm device\n");
 		return -1;
@@ -348,7 +344,6 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	while (1) {
 		int ret;
 		line = 0;
-	printf("begin\n");
 
 		if (display_available)
 			cfb_framebuffer_clear(dev_display, false);
