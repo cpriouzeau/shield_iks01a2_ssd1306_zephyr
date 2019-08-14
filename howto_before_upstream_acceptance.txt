@@ -1,0 +1,72 @@
+Get zephyr:
+-----------
+Update west:
+$> pip3 install --user -U west
+Gte zephyrproject
+$> west init zephyrproject
+$> cd zephyrproject
+$> west update
+
+Update zephyr to have openAMP and stm32mp157c
+---------------------------------------------
+* Update HAL/LIB-OPENAMP
+$> cd zephyrproject/modules/lib/open-amp
+$> git remote add arno https://github.com/arnop2/open-amp-1
+$> git fetch arno
+$> git cherry-pick 28cc6fb3023f4c8827636156b3fce2627b47f882
+	(resource table: add helper to add resource table in project.)
+$> git cherry-pick aead88f6edb8f5cac47b6ba441fbecef0bbd38bf
+	(remoteproc: fix compilation warning in elf loader)
+Get SHA1 to put it on west.xml
+
+
+* Update ZEPHYR
+Get Pull request #16985
+ - git remote add arno https://github.com/arnop2/zephyr_stm32mp1
+ - git fetch arno
+ - rebase branch arno/OpenAMP_rsc_table_sample on master branch
+
+Update west.yml by changing the SHA1 of hal_stm32 and modules/lib/open-amp
+
+
+ST Example based on shiel x_nucleo_iks01a2 and oled screen ssd1306:
+-------------------------------------------------------------------
+$> cd zephyrproject
+$> tar xf shield_iks01a2_ssd1306_st_example_for_linaro.tar.xz
+
+source zephyr environment:
+$> cd zephyrproject/zephyr
+$> source zephyr-env.sh
+$> cd ..
+
+Build project:
+$> west build -b stm32mp157c_dk2 shield_iks01a2_ssd1306/
+
+Push it on board:
+-----------------
+via ssh:
+$> ssh root@<ip address of board> 'mkdir -p /home/root/zephyr/lib/firmware'
+$> scp build/zephyr/zephyr_shield_openamp_tty.elf root@<ip address of board>:/home/root/zephyr/lib/firmware/
+$> scp shield_iks01a2_ssd1306/fw_cortex_m4.sh root@<ip address of board>:/home/root/zephyr/
+$> scp start_tty.sh root@<ip address of board>:/home/root/zephyr/
+BOARD> find /home/root/zephyr/
+/home/root/zephyr/fw_cortex_m4.sh
+/home/root/zephyr/lib
+/home/root/zephyr/lib/firmware
+/home/root/zephyr/lib/firmware/zephyr_shield_openamp_tty.elf
+/home/root/zephyr/start_tty.sh
+
+
+Execute it on board:
+-------------------
+BOARD> cd /home/root/zephyr/
+BOARD> ./fw_cortex_m4.sh start
+launch data on ttyRPMSG tty to start data loop
+BOARD> ./start_tty.sh
+open tty to see data from M4 zephyr
+BOARD> cat /dev/ttyRPMGS0
+
+To stop
+BOARD> ./fw_cortex_m4.sh stop
+
+
